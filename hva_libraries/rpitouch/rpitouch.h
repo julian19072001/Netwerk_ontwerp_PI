@@ -36,7 +36,7 @@
   //      "raspberrypi-ts"
   // now: "generic ft5x06 (79)"
   #define RPITOUCH_DEVICE_SLOT_COUNT 10
-  #define RPITOUCH_DEVICE_NAME "generic ft"
+  #define RPITOUCH_DEVICE_NAME "10-0038 generic ft5x06 (79)"
   #define RPITOUCH_DEVICE_WIDTH_PIX 800
   #define RPITOUCH_DEVICE_HEIGHT_PIX 480
   #define RPITOUCH_SWIPE_WIDTH_COUNT 3

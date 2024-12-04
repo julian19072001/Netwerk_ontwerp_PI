@@ -1,0 +1,1 @@
+xterm -geometry 800x480 -e "./terminal" &

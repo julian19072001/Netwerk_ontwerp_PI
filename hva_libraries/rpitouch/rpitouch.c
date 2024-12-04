@@ -75,7 +75,7 @@ int RPiTouch_InitTouch() {
 
     // Parse directory item for: event#
     if (sscanf(pDirItem->d_name, "event%u", &_nRPiTouch_EventId) == 1) {
-      //printf("%d %s\n", nNr, pDirItem->d_name);
+      printf("%d %s\n", _nRPiTouch_EventId, pDirItem->d_name);
 
       // Get the device information
       sprintf(sFilename, "/dev/input/%s", pDirItem->d_name);

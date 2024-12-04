@@ -1,6 +1,6 @@
 // ncurses_rpitouch.c
 //
-// gcc -Wall -o ncurses_rpitouch ncurses_rpitouch.c ~/hva_libraries/rpitouch/*.c -I/home/piuser/hva_libraries/rpitouch -lncurses
+// gcc -Wall -o ncurses_rpitouch ncurses_rpitouch.c ~/hva_libraries/rpitouch/*.c -I/home/julian/Netwerk_ontwerp_PI/hva_libraries/rpitouch -lncurses
 // ./ncurses_rpitouch
 //
 // Author : Edwin Boer
