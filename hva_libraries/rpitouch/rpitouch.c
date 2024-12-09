@@ -81,14 +81,14 @@ int RPiTouch_InitTouch() {
       sprintf(sFilename, "/dev/input/%s", pDirItem->d_name);
       nDevice = open(sFilename, O_RDONLY | O_NONBLOCK);
       if (nDevice <= 0) {
-        //printf("Error: unable to open event-stream\n\n");
+        printf("Error: unable to open event-stream\n\n");
         return -3;
       }
       else {
         // Event-stream is open
         if (ioctl(nDevice, EVIOCGNAME(256), sDeviceName) >= 0) {
           // Tip: use next debug line to determine new touchscreen name
-          //printf("Device [%s] with name [%s]\n", pDirItem->d_name, sDeviceName);
+          printf("Device [%s] with name [%s]\n", pDirItem->d_name, sDeviceName);
 
           if (strncmp(sDeviceName, RPITOUCH_DEVICE_NAME, strlen(RPITOUCH_DEVICE_NAME)) == 0) {
             // Found :-) so no closing needed
@@ -109,7 +109,7 @@ int RPiTouch_InitTouch() {
   closedir(pDir);
 
   // None found
-  //printf("Error: could not find the touchscreen\n\n");
+  printf("Error: could not find the touchscreen\n\n");
   return -1;
 }
 
@@ -237,14 +237,7 @@ int RPiTouch_CloseTouch() {
  */
 void RPiTouch_ApplyRestart() {
 
-  // NO clear screen and start applying after countdown
-  printf("\n\nApply restart ... "); fflush(stdout);
-  for (uint8_t t = _oRPiTouch_Settings.nRestartWait; t > 0; t--) {
-    printf("%d ", t); fflush(stdout);
-    sleep(1);
-  }
-  printf("now!\n\n"); fflush(stdout);
-  system(RPITOUCH_SCRIPT_RESTART);
+  system("sudo reboot");
 
   exit(1);
 }
@@ -254,14 +247,7 @@ void RPiTouch_ApplyRestart() {
  */
 void RPiTouch_ApplyShutdown() {
 
-  // NO clear screen and start applying after countdown
-  printf("\n\nApply shutdown ... "); fflush(stdout);
-  for (uint8_t t = _oRPiTouch_Settings.nShutdownWait; t > 0; t--) {
-    printf("%d ", t); fflush(stdout);
-    sleep(1);
-  }
-  printf("now!\n\n"); fflush(stdout);
-  system(RPITOUCH_SCRIPT_SHUTDOWN);
+  system("sudo shutdown -h now");
 
   exit(2);
 }

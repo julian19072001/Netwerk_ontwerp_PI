@@ -41,8 +41,8 @@
   #define RPITOUCH_DEVICE_HEIGHT_PIX 480
   #define RPITOUCH_SWIPE_WIDTH_COUNT 3
   #define RPITOUCH_SWIPE_HEIGHT_COUNT 3
-  #define RPITOUCH_SCRIPT_RESTART  "~/hva_libraries/rpitouch/shellscripts/rpitouch_restart.sh"
-  #define RPITOUCH_SCRIPT_SHUTDOWN "~/hva_libraries/rpitouch/shellscripts/rpitouch_shutdown.sh"
+  #define RPITOUCH_SCRIPT_RESTART  "hva_libraries/rpitouch/shellscripts/rpitouch_restart.sh"
+  #define RPITOUCH_SCRIPT_SHUTDOWN "hva_libraries/rpitouch/shellscripts/rpitouch_shutdown.sh"
 
   // Helper structs
   struct RPiTouch_MultiTouchSlot {

@@ -1,4 +1,4 @@
 #!/bin/sh
 echo Restarting
-sudo shutdown -r now
+sudo reboot
 
