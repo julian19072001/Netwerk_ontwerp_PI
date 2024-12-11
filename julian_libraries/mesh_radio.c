@@ -37,6 +37,7 @@ uint8_t nRF_pipe[5] = NRF_PIPE;
 static volatile uint8_t rxWritePointer, rxReadPointer, rxBuffer[RX_BUFFER_DEPTH];
 
 uint8_t broadcastMessages[DEBUG_LINES][32];
+uint8_t dataMessages[DEBUG_LINES][32];
 
 // Setup for NRF communication
 void radioInit(uint8_t setAddress)
@@ -225,12 +226,32 @@ void printNeighbors(int maxRows, WINDOW *window) {
 }
 
 void printBroadcasts(WINDOW *window){
+    char *header = "Broadcast messages:";
+
+    mvwprintw(window, 1, (64 - strlen(header)) /2, "%s", header);
     
     for(int i = 0; i < DEBUG_LINES; i++){
         for(int j = 0; j < 32; j++){
             int color_pair = (j % 2 == 0) ? 6 : 5; // Alternate colors
             wattron(window, COLOR_PAIR(color_pair));
             mvwprintw(window, 2 + i, j*2, "%02X", broadcastMessages[i][j]);
+            wattroff(window, COLOR_PAIR(color_pair));
+        }
+    }
+
+    wrefresh(window);
+}
+
+void printDataMessages(WINDOW *window){
+    char *header = "Data messages:";
+
+    mvwprintw(window, 1, (64 - strlen(header)) /2, "%s", header);
+    
+    for(int i = 0; i < DEBUG_LINES; i++){
+        for(int j = 0; j < 32; j++){
+            int color_pair = (j % 2 == 0) ? 6 : 5; // Alternate colors
+            wattron(window, COLOR_PAIR(color_pair));
+            mvwprintw(window, 2 + i, j*2, "%02X", dataMessages[i][j]);
             wattroff(window, COLOR_PAIR(color_pair));
         }
     }
@@ -282,6 +303,11 @@ void interruptHandler(void)
         
         // In case the data was sensor data send it over if the data was ment for me and otherwise save it in buffer
         case COMMAND_DATA:
+            for(int i = 0; i < 9; i++){
+                memcpy(dataMessages[9 - i], dataMessages[8 - i], 32);
+            }
+            memcpy(dataMessages[0], received_packet, 32);
+
             if(received_packet[2] == address){
                 if(received_packet[3] != address) sendRadioData(received_packet[3], received_packet + 4, packetLength - 4); 
                 else saveReceivedData(received_packet + 4, packetLength - 4);

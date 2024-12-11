@@ -17,7 +17,7 @@
 #define NRF_RETRY_SPEED NRF_SETUP_ARD_1000US_gc         //if failed retry with a delay of 1000 us
 #define NRF_NUM_RETRIES NRF_SETUP_ARC_8RETRANSMIT_gc    //if failed retry 8 times
 
-#define NRF_POWER_LEVEL NRF_RF_SETUP_PWR_0DBM_gc       //power mode -6dB
+#define NRF_POWER_LEVEL NRF_RF_SETUP_PWR_12DBM_gc       //power mode -6dB
 #define NRF_DATA_RATE   NRF_RF_SETUP_RF_DR_250K_gc      //data rate: 250kbps
 #define NRF_CRC_LENGTH  NRF_CONFIG_CRC_16_gc            //CRC check length
 #define NRF_AUTO_ACK    0                               //turn off auto acknowlage
@@ -67,7 +67,9 @@ uint8_t readRadioMessage(uint8_t *dataLocation);
 
 // Prints all the neighbors and there important values
 void printNeighbors(int maxRows, WINDOW *window);
-
+// Prints the last broadcast messages on screen
 void printBroadcasts(WINDOW *window);
+// Prints the last data messages on screen
+void printDataMessages(WINDOW *window);
 
 #endif // MESH_RADIO_H_

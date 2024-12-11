@@ -46,8 +46,9 @@ int main(int nArgc, char* aArgv[]) {
     getmaxyx(stdscr, maxRows, maxCols); // Get terminal size
    
     WINDOW *shutdownWindow = newwin(3, 16, 0, maxCols - 16);
-    WINDOW *neighbordTable = newwin(maxRows, ID_WIDTH + HOPS_WIDTH + WEIGHT_WIDTH + TRUSTED_WIDTH + 1, 0, 0);
-    WINDOW *boardcastTable = newwin(12, 64, 4, ID_WIDTH + HOPS_WIDTH + WEIGHT_WIDTH + TRUSTED_WIDTH + 3);
+    WINDOW *neighbordTable = newwin(maxRows, 5 + ID_WIDTH + HOPS_WIDTH + WEIGHT_WIDTH + TRUSTED_WIDTH + 1, 0, 0);
+    WINDOW *boardcastTable = newwin(12, 64, 5, 5 + ID_WIDTH + HOPS_WIDTH + WEIGHT_WIDTH + TRUSTED_WIDTH + 3);
+    WINDOW *dataTable = newwin(12, 64, 18, 5 + ID_WIDTH + HOPS_WIDTH + WEIGHT_WIDTH + TRUSTED_WIDTH + 3);
 
     while(1){
 
@@ -70,6 +71,7 @@ int main(int nArgc, char* aArgv[]) {
             // Draw the table
             printNeighbors(maxRows, neighbordTable);
             printBroadcasts(boardcastTable);
+            printDataMessages(dataTable);
             cycles = 0;
         }
 
