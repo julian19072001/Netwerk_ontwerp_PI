@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <wiringPi.h>
 #include <wiringPiSPI.h>
+#include <ncurses.h>
 #include "nrf24L01.h"
 
 #define NRF_RETRY_SPEED NRF_SETUP_ARD_1000US_gc         //if failed retry with a delay of 1000 us
@@ -38,6 +39,7 @@
 #define HOPS_WIDTH 5
 #define WEIGHT_WIDTH 7
 #define TRUSTED_WIDTH 7
+#define DEBUG_LINES 10
 
 #define COMMAND_PING        0x01
 #define COMMAND_PING_END    0x02
@@ -64,6 +66,8 @@ uint8_t readRadioMessage(uint8_t *dataLocation);
 
 
 // Prints all the neighbors and there important values
-void printNeighbors(int maxRows);
+void printNeighbors(int maxRows, WINDOW *window);
+
+void printBroadcasts(WINDOW *window);
 
 #endif // MESH_RADIO_H_

@@ -8,7 +8,6 @@
 #include <unistd.h>
 #include <secret_key.h>
 #include <mesh_radio.h>
-#include <ncurses.h>
 
 void interruptHandler(void);
 void timer_handler(int signum);
@@ -36,6 +35,8 @@ volatile uint8_t address = 0;
 uint8_t nRF_pipe[5] = NRF_PIPE;
 
 static volatile uint8_t rxWritePointer, rxReadPointer, rxBuffer[RX_BUFFER_DEPTH];
+
+uint8_t broadcastMessages[DEBUG_LINES][32];
 
 // Setup for NRF communication
 void radioInit(uint8_t setAddress)
@@ -179,7 +180,7 @@ uint8_t readRadioMessage(uint8_t *dataLocation) {
 }
 
 // Function to print all Neigbors
-void printNeighbors(int maxRows) {
+void printNeighbors(int maxRows, WINDOW *window) {
     int start_y = 1, start_x = 1; // Start position for the table
     int row = 0;
 
@@ -187,38 +188,54 @@ void printNeighbors(int maxRows) {
     const char *headers[] = {"ID", "Hops", "Weight", "Trusted"};
 
     // Draw headers
-    attron(COLOR_PAIR(1)); // Use header color
-    mvprintw(start_y, start_x, "Neighbord table:");
-    mvprintw(start_y + 2, start_x, "%-*s%-*s%-*s%-*s",
+    wattron(window, COLOR_PAIR(1)); // Use header color
+    mvwprintw(window, start_y, start_x, "Neighbord table:");
+    mvwprintw(window, start_y + 2, start_x, "%-*s%-*s%-*s%-*s",
              ID_WIDTH, headers[0],
              HOPS_WIDTH, headers[1],
              WEIGHT_WIDTH, headers[2],
              TRUSTED_WIDTH, headers[3]);
-    attroff(COLOR_PAIR(1));
+    wattroff(window, COLOR_PAIR(1));
 
     // Draw rows with alternating colors
     for (int i = 0; i < MAX_SENDERS; i++) {
         if (packages[i].inUse) {
             int color_pair = (row % 2 == 0) ? 2 : 3; // Alternate colors
-            attron(COLOR_PAIR(color_pair));
-            mvprintw(start_y + 3 + row, start_x, "%-*x%-*d%-*d%-*s",
+            wattron(window, COLOR_PAIR(color_pair));
+            mvwprintw(window, start_y + 3 + row, start_x, "%-*x%-*d%-*d%-*s",
                     ID_WIDTH, packages[i].id,
                     HOPS_WIDTH, packages[i].hops,
                     WEIGHT_WIDTH, packages[i].weight,
                     TRUSTED_WIDTH, packages[i].trusted == 1 ? "yes" : "no");
-            attroff(COLOR_PAIR(color_pair));
+            wattroff(window, COLOR_PAIR(color_pair));
 
             row++;
         }
     }
+
+
     for (row = row; row < maxRows; row++) {
-        mvprintw(start_y + 3 + row, start_x, "%-*s%-*s%-*s%-*s",
+        mvwprintw(window, start_y + 3 + row, start_x, "%-*s%-*s%-*s%-*s",
                     ID_WIDTH, " ",
                     HOPS_WIDTH, " ",
                     WEIGHT_WIDTH, " ",
                     TRUSTED_WIDTH, " ");
     }
+    wrefresh(window);
+}
 
+void printBroadcasts(WINDOW *window){
+    
+    for(int i = 0; i < DEBUG_LINES; i++){
+        for(int j = 0; j < 32; j++){
+            int color_pair = (j % 2 == 0) ? 6 : 5; // Alternate colors
+            wattron(window, COLOR_PAIR(color_pair));
+            mvwprintw(window, 2 + i, j*2, "%02X", broadcastMessages[i][j]);
+            wattroff(window, COLOR_PAIR(color_pair));
+        }
+    }
+
+    wrefresh(window);
 }
 
 // Function for both encrypting and decrypting
@@ -255,6 +272,11 @@ void interruptHandler(void)
         // In case the data was a ping save the data in neighbor table
         case COMMAND_PING:
         case COMMAND_PING_END:
+            for(int i = 0; i < 9; i++){
+                memcpy(broadcastMessages[9 - i], broadcastMessages[8 - i], 32);
+            }
+            memcpy(broadcastMessages[0], received_packet, 32);
+
             saveRemoteNeighborTable(received_packet[0], &received_packet[3], packetLength - 2, received_packet[2]);
             break;
         
