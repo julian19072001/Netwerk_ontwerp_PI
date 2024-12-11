@@ -6,10 +6,14 @@
 #include <signal.h>
 #include <sys/time.h>
 #include <unistd.h>
+#include <secret_key.h>
 #include <mesh_radio.h>
+#include <ncurses.h>
 
 void interruptHandler(void);
 void timer_handler(int signum);
+
+void encryption(uint8_t *data, uint8_t dataSize);
 void updateWeight(uint8_t address);
 uint8_t checkTrusted(uint8_t address);
 void saveReceivedData(uint8_t *data, uint8_t dataLength);
@@ -113,6 +117,9 @@ void sendRadioData(uint8_t target_id, uint8_t* data, uint8_t dataSize){
         }
     }
 
+    // Encrypt data
+    encryption(data, dataSize);
+
     // If there is no route dont send anything
     if(!sendData[2]) return;
 
@@ -164,18 +171,61 @@ uint8_t readRadioMessage(uint8_t *dataLocation) {
         numberOfBytes++;
     }
 
+    // Decrypt data
+    encryption(dataLocation, numberOfBytes);
+
+    // Return the size of the data
     return numberOfBytes;
 }
 
 // Function to print all Neigbors
-void printNeighbors() {
+void printNeighbors(int maxRows) {
+    int start_y = 1, start_x = 1; // Start position for the table
+    int row = 0;
+
+    // Define headers and data
+    const char *headers[] = {"ID", "Hops", "Weight", "Trusted"};
+
+    // Draw headers
+    attron(COLOR_PAIR(1)); // Use header color
+    mvprintw(start_y, start_x, "Neighbord table:");
+    mvprintw(start_y + 2, start_x, "%-*s%-*s%-*s%-*s",
+             ID_WIDTH, headers[0],
+             HOPS_WIDTH, headers[1],
+             WEIGHT_WIDTH, headers[2],
+             TRUSTED_WIDTH, headers[3]);
+    attroff(COLOR_PAIR(1));
+
+    // Draw rows with alternating colors
     for (int i = 0; i < MAX_SENDERS; i++) {
         if (packages[i].inUse) {
-            printf("ID: %d, hops: %d, Weight: %d, Trusted: %d, Owner: %d\n", 
-                   packages[i].id, packages[i].hops,  
-                   packages[i].weight, packages[i].trusted,
-                   packages[i].owner); 
+            int color_pair = (row % 2 == 0) ? 2 : 3; // Alternate colors
+            attron(COLOR_PAIR(color_pair));
+            mvprintw(start_y + 3 + row, start_x, "%-*x%-*d%-*d%-*s",
+                    ID_WIDTH, packages[i].id,
+                    HOPS_WIDTH, packages[i].hops,
+                    WEIGHT_WIDTH, packages[i].weight,
+                    TRUSTED_WIDTH, packages[i].trusted == 1 ? "yes" : "no");
+            attroff(COLOR_PAIR(color_pair));
+
+            row++;
         }
+    }
+    for (row = row; row < maxRows; row++) {
+        mvprintw(start_y + 3 + row, start_x, "%-*s%-*s%-*s%-*s",
+                    ID_WIDTH, " ",
+                    HOPS_WIDTH, " ",
+                    WEIGHT_WIDTH, " ",
+                    TRUSTED_WIDTH, " ");
+    }
+
+}
+
+// Function for both encrypting and decrypting
+void encryption(uint8_t *data, uint8_t dataSize){
+    uint8_t key[] = SECRET_KEY;
+    for (uint8_t i = 0; i < dataSize; ++i) {
+        data[i] ^= key[i % sizeof(key)];
     }
 }
 
@@ -341,8 +391,9 @@ void processData(uint8_t *data, uint16_t dataLength, uint8_t owner) {
         uint8_t id = data[i];
         uint8_t hops = data[i + 1];
 
-        if (id == 0x00) break; // End of valid data, stop parsing
-        if (id == address) continue;
+        if (id == 0x00) break;          // End of valid data, stop parsing
+        if (id == address) continue;    // If ID is myself continue
+        if (hops >= MAX_HOPS) continue; // If hops amount is above maximum amount of hops continue
 
         // Store the ID and hops pair
         for (int i = 0; i < MAX_SENDERS; i++) {
@@ -468,9 +519,9 @@ void timer_handler(int signum)
 // Snapshot structure
 typedef struct {
     uint8_t *messages[MAX_SENDERS]; // Array of pointers to messages
-    size_t messageLengths[MAX_SENDERS]; // Length of each message
-    size_t totalMessages; // Total number of messages
-    size_t currentMessage; // Index of the next message to send
+    uint8_t messageLengths[MAX_SENDERS]; // Length of each message
+    uint8_t totalMessages; // Total number of messages
+    uint8_t currentMessage; // Index of the next message to send
 } Snapshot;
 
 Snapshot snapshot = { .totalMessages = 0, .currentMessage = 0 };
@@ -481,9 +532,9 @@ void createSnapshot(Package packages[]) {
     snapshot.currentMessage = 0;
 
     uint8_t buffer[MAX_DATA_LENGTH]; // Temporary buffer
-    size_t bufferIndex = 0;
+    uint8_t bufferIndex = 0;
 
-    for (size_t i = 0; i < MAX_SENDERS; i++) {
+    for (uint8_t i = 0; i < MAX_SENDERS; i++) {
         if (packages[i].inUse && packages[i].trusted) {
             // Add id and hops to the buffer
             buffer[bufferIndex++] = packages[i].id;
@@ -515,7 +566,7 @@ void sendNextPing() {
 
     if (snapshot.totalMessages > 0) {
         uint8_t *message = snapshot.messages[snapshot.currentMessage];
-        size_t messageLength = snapshot.messageLengths[snapshot.currentMessage];
+        uint8_t messageLength = snapshot.messageLengths[snapshot.currentMessage];
 
         // Pack the index and total number into a separate index byte
         uint8_t indexByte = (snapshot.currentMessage << 4) | (snapshot.totalMessages & 0x0F);

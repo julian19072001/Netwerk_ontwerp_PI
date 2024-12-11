@@ -26,7 +26,7 @@ int main(int nArgc, char* aArgv[]) {
         return -1;
     }
 
-    radioInit(0x40);
+    radioInit(BASE_ADDRESS);
 
     // Init ncurses
     initscr();
@@ -58,16 +58,14 @@ int main(int nArgc, char* aArgv[]) {
         wattroff(shutdownWindow, COLOR_PAIR(4));                 // Deactivate color pair
         wrefresh(shutdownWindow);
 
-        move(5,5);
-        printw("%d, %d, %d", realColPos, realRowPos, _oRPiTouch_Touched.bButton);
-
         // Define color pairs
         init_pair(1, COLOR_WHITE, COLOR_BLACK);   // Header color
         init_pair(2, COLOR_BLACK, COLOR_WHITE);   // Row color 1
         init_pair(3, COLOR_BLACK, COLOR_CYAN);   // Row color 1
 
         // Draw the table
-        draw_table(maxRows);
+        printNeighbors(maxRows);
+        mvvline(0, ID_WIDTH + HOPS_WIDTH + WEIGHT_WIDTH + TRUSTED_WIDTH + 2, '|', maxRows);
 
         refresh();
 
@@ -85,44 +83,4 @@ int main(int nArgc, char* aArgv[]) {
     endwin();
 
     return 0;
-}
-
-void draw_table(int maxRows) {
-    int start_y = 1, start_x = 1; // Start position for the table
-    int row;
-
-    // Define headers and data
-    const char *headers[] = {"ID", "Hops", "Weight", "Trusted"};
-    const char *data[][4] = {
-        {"1", "1", "50", "1"},
-        {"2", "3", "0", "1"},
-        {"3", "2", "0", "1"},
-        {"4", "1", "15", "0"}
-    };
-
-    int rows = sizeof(data) / sizeof(data[0]);
-
-    // Draw headers
-    attron(COLOR_PAIR(1)); // Use header color
-    mvprintw(start_y, start_x, "Neighbord table:");
-    mvprintw(start_y + 2, start_x, "%-*s%-*s%-*s%-*s",
-             ID_WIDTH, headers[0],
-             HOPS_WIDTH, headers[1],
-             WEIGHT_WIDTH, headers[2],
-             TRUSTED_WIDTH, headers[3]);
-    attroff(COLOR_PAIR(1));
-
-    // Draw rows with alternating colors
-    for (row = 0; row < rows; row++) {
-        int color_pair = (row % 2 == 0) ? 2 : 3; // Alternate colors
-        attron(COLOR_PAIR(color_pair));
-        mvprintw(start_y + 3 + row, start_x, "%-*s%-*s%-*s%-*s",
-                 ID_WIDTH, data[row][0],
-                 HOPS_WIDTH, data[row][1],
-                 WEIGHT_WIDTH, data[row][2],
-                 TRUSTED_WIDTH, atoi(data[row][3]) == 1 ? "yes" : "no");
-        attroff(COLOR_PAIR(color_pair));
-    }
-
-    mvvline(0, ID_WIDTH + HOPS_WIDTH + WEIGHT_WIDTH + TRUSTED_WIDTH + 2, '|', maxRows);
 }
