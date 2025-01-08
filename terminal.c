@@ -3,6 +3,7 @@
 #include <ncurses.h>
 #include <rpitouch.h>
 #include <unistd.h>
+#include <math.h>
 #include <mesh_radio.h>
 #include <address.h>
 
@@ -15,6 +16,16 @@ typedef enum windowTypes{
     plantSettings,
     roomSettings
 }windowType;
+
+typedef struct roomSettings{
+    uint8_t tempratureSensor;
+    uint8_t humiditySensor;
+    uint8_t lightSensor;
+
+    float temprature;
+    float humidity;
+    float lightLevel;
+}roomSettings_t;
 
 void initColors(){
     // Define color pairs
@@ -138,7 +149,31 @@ int main(int nArgc, char* aArgv[]) {
         {4 + (quarterRows * 3), 0}, {4 + (quarterRows * 3), quarterCols}, {4 + (quarterRows * 3), quarterCols * 2}, {4 + (quarterRows * 3), quarterCols * 3},
     };
 
-    
+    roomSettings_t rooms[3];
+
+    rooms[0].tempratureSensor = TEMP_HUMID_START_ADDRESS;
+    rooms[0].humiditySensor = TEMP_HUMID_START_ADDRESS;
+    rooms[0].lightSensor = LIGHT_START_ADDRESS;
+    rooms[0].temprature = 0.2;
+    rooms[0].humidity = 0.2;
+    rooms[0].lightLevel = 0.2;
+
+    rooms[1].tempratureSensor = TEMP_HUMID_START_ADDRESS + 1;
+    rooms[1].humiditySensor = TEMP_HUMID_START_ADDRESS + 1;
+    rooms[1].lightSensor = LIGHT_START_ADDRESS + 1;
+    rooms[1].temprature = 0.2;
+    rooms[1].humidity = 0.2;
+    rooms[1].lightLevel = 0.2;
+
+    rooms[2].tempratureSensor = TEMP_HUMID_START_ADDRESS + 2;
+    rooms[2].humiditySensor = TEMP_HUMID_START_ADDRESS + 2;
+    rooms[2].lightSensor = LIGHT_START_ADDRESS + 2;
+    rooms[2].temprature = 0.2;
+    rooms[2].humidity = 0.2;
+    rooms[2].lightLevel = 0.2;
+
+    uint8_t roomShown = 0;
+
     for (int i = 0; i < 16; i++) {
         identWindows[i] = newwin(quarterRows, quarterCols, identPositions[i][0], identPositions[i][1]);
     }
@@ -195,18 +230,20 @@ int main(int nArgc, char* aArgv[]) {
                 wrefresh(plantInfo[2]);
 
                 drawButton(roomInfo[0], 10, 1, 6, "Room 1:");
-                mvwprintw(roomInfo[0], 2, 1, "Temprature: %02d C", 3);
-                mvwprintw(roomInfo[0], 3, 3, "Humidity: %02d%%", 3);
-                mvwprintw(roomInfo[0], 4, 1, "Light level: %02d%%", 3);
+                mvwprintw(roomInfo[0], 2, 1, "Temprature: %2.0f C", rooms[0].temprature);
+                mvwprintw(roomInfo[0], 3, 3, "Humidity: %2.0f%%", rooms[0].humidity);
+                mvwprintw(roomInfo[0], 4, 1, "Light level:%3.0fWm", rooms[0].lightLevel);
                 wrefresh(roomInfo[0]);
                 drawButton(roomInfo[1], 9, 1, 6, "Room 2:");
-                mvwprintw(roomInfo[1], 2, 1, "Temprature: %02d C", 3);
-                mvwprintw(roomInfo[1], 3, 3, "Humidity: %02d%%", 3);
-                mvwprintw(roomInfo[1], 4, 1, "Light level: %02d%%", 3);
+                mvwprintw(roomInfo[1], 2, 1, "Temprature: %2.0f C", rooms[1].temprature);
+                mvwprintw(roomInfo[1], 3, 3, "Humidity: %2.0f%%", rooms[1].humidity);
+                mvwprintw(roomInfo[1], 4, 1, "Light level:%3.0fWm", rooms[1].lightLevel);
+                wrefresh(roomInfo[1]);
                 drawButton(roomInfo[2], 10, 1, 6, "Room 3:");
-                mvwprintw(roomInfo[2], 2, 1, "Temprature: %02d C", 3);
-                mvwprintw(roomInfo[2], 3, 3, "Humidity: %02d%%", 3);
-                mvwprintw(roomInfo[2], 4, 1, "Light level: %02d%%", 3);
+                mvwprintw(roomInfo[2], 2, 1, "Temprature: %2.0f C", rooms[2].temprature);
+                mvwprintw(roomInfo[2], 3, 3, "Humidity: %2.0f%%", rooms[2].humidity);
+                mvwprintw(roomInfo[2], 4, 1, "Light level:%3.0fWm", rooms[2].lightLevel);
+                wrefresh(roomInfo[2]);
 
                 // Handel buttons
                 if(isWithinWindow(identButton, realRowPos, realColPos)){ 
@@ -216,6 +253,22 @@ int main(int nArgc, char* aArgv[]) {
                 
                 if(isWithinWindow(debugButton, realRowPos, realColPos)){ 
                     windowShown = debug;
+                    clear();
+                }
+
+                if(isWithinWindow(roomInfo[0], realRowPos, realColPos)){
+                    windowShown = roomSettings;
+                    roomShown = 0;
+                    clear();
+                }
+                if(isWithinWindow(roomInfo[1], realRowPos, realColPos)){
+                    windowShown = roomSettings;
+                    roomShown = 1;
+                    clear();
+                }
+                if(isWithinWindow(roomInfo[2], realRowPos, realColPos)){
+                    windowShown = roomSettings;
+                    roomShown = 2;
                     clear();
                 }
                 break;
@@ -305,6 +358,26 @@ int main(int nArgc, char* aArgv[]) {
                     clear();
                 }
                 break;
+            
+            case roomSettings:
+                // The text to center
+                header = "Room ! information";
+                text_length = strlen(header);
+                // Calculate the starting column to center the text
+                start_col = (maxCols - text_length) / 2;
+                // Print the text in the middle of the screen (middle row)
+                mvprintw(1, start_col, "Room %d information", roomShown + 1);
+
+
+
+                // Draw back button
+                drawButton(backButton, 4, 1, 3, "<");
+
+                // Handel buttons
+                if(isWithinWindow(backButton, realRowPos, realColPos)){ 
+                    windowShown = mainWindow;
+                    clear();
+                }
         }
 
         // Refresh screen
