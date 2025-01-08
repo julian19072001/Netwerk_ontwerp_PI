@@ -15,14 +15,14 @@
 #include "nrf24L01.h"
 
 #define NRF_RETRY_SPEED NRF_SETUP_ARD_1000US_gc         //if failed retry with a delay of 1000 us
-#define NRF_NUM_RETRIES NRF_SETUP_ARC_8RETRANSMIT_gc    //if failed retry 8 times
+#define NRF_NUM_RETRIES NRF_SETUP_ARC_NORETRANSMIT_gc    //if failed retry 8 times
 
-#define NRF_POWER_LEVEL NRF_RF_SETUP_PWR_12DBM_gc       //power mode -6dB
+#define NRF_POWER_LEVEL NRF_RF_SETUP_PWR_18DBM_gc       //power mode -6dB
 #define NRF_DATA_RATE   NRF_RF_SETUP_RF_DR_250K_gc      //data rate: 250kbps
 #define NRF_CRC_LENGTH  NRF_CONFIG_CRC_16_gc            //CRC check length
 #define NRF_AUTO_ACK    0                               //turn off auto acknowlage
 
-#define NRF_CHANNEL     54                              //NRF channel 54
+#define NRF_CHANNEL     69                              //NRF channel 54
 #define NRF_PIPE  {0x30, 0x47, 0x72, 0x70, 0x45} 	    //pipe address ""
 
 #define MAX_SENDERS 50                                  //Maximum number of senders
@@ -45,7 +45,12 @@
 #define COMMAND_PING_END    0x02
 #define COMMAND_DATA        0x03
 
-#define BASE_ADDRESS        0x40
+#define DATA_IDENTFY        0x01
+#define DATA_TEMP           0x02
+#define DATA_HUMID          0x03
+#define DATA_LIGHT          0x04
+#define DATA_GROUND_HUMID   0x05
+#define DATA_TEST           0x06
 
 // Initialize the NRF radio, needs to be given a address so the network can identify how it is
 void radioInit(uint8_t set_address);
@@ -55,7 +60,7 @@ void radioInit(uint8_t set_address);
 // targetId = Intented destination for data
 // data = data to be send
 // dataSize = number of bytes to be send (Cannot go beyond MAX_DATA_LENGHT)
-void sendRadioData(uint8_t target_id, uint8_t* data, uint8_t data_size);
+void sendRadioData(uint8_t target_id, uint8_t* data, uint8_t data_size, bool encrypt);
 
 // Check if there is data in the buffer to be read
 uint8_t canReadRadio(void);
@@ -63,6 +68,9 @@ uint8_t canReadRadio(void);
 // read the first received message in buffer, returns the number of bytes in the message
 // dataLocation = place where data needs to be saved
 uint8_t readRadioMessage(uint8_t *dataLocation);
+
+// Get all the ids that belong to our system that are found in the array
+uint8_t getOwnIds(uint8_t *ids);
 
 
 // Prints all the neighbors and there important values

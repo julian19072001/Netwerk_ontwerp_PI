@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <secret_key.h>
 #include <mesh_radio.h>
+#include <address.h>
 
 void interruptHandler(void);
 void timer_handler(int signum);
@@ -100,7 +101,7 @@ void radioInit(uint8_t setAddress)
     }
 }
 
-void sendRadioData(uint8_t target_id, uint8_t* data, uint8_t dataSize){
+void sendRadioData(uint8_t target_id, uint8_t* data, uint8_t dataSize, bool encrypt){
     
     if(dataSize > MAX_DATA_LENGTH) return;
     
@@ -119,11 +120,11 @@ void sendRadioData(uint8_t target_id, uint8_t* data, uint8_t dataSize){
         }
     }
 
-    // Encrypt data
-    encryption(data, dataSize);
-
     // If there is no route dont send anything
     if(!sendData[2]) return;
+
+    // Encrypt data
+    if(encrypt) encryption(data, dataSize);
 
     // Save data to be send
     for(int i = 0; i < dataSize; i++){
@@ -259,6 +260,21 @@ void printDataMessages(WINDOW *window){
     wrefresh(window);
 }
 
+// Function to return array of ids that belong to our network
+uint8_t getOwnIds(uint8_t *ids){
+    uint8_t numberOfIds = 0;
+
+    for (int i = 0; i < MAX_SENDERS; i++) {
+        if(packages[i].inUse && packages[i].trusted &&
+        packages[i].id >= BASE_ADDRESS && packages[i].id <= TEST_END_ADDRESS){
+            ids[numberOfIds] = packages[i].id;
+            numberOfIds++;
+        }
+    }
+
+    return numberOfIds;
+}
+
 // Function for both encrypting and decrypting
 void encryption(uint8_t *data, uint8_t dataSize){
     uint8_t key[] = SECRET_KEY;
@@ -277,7 +293,7 @@ void interruptHandler(void)
 {
 	uint8_t txDs, maxRt, rxDr;
 	uint8_t packetLength;
-    uint8_t received_packet[32] = {0};				    // Create a place to store received data
+    static uint8_t received_packet[32];				    // Create a place to store received data
 	
 	nrfWhatHappened(&txDs, &maxRt, &rxDr);
 
@@ -286,6 +302,7 @@ void interruptHandler(void)
 		nrfRead(received_packet, packetLength);	        // Store the received data
 
         updateWeight(received_packet[0]);
+        // mvprintw(0, 30, "%02X\n", received_packet[1]);
         if(!checkTrusted(received_packet[0])) return;
 
         // Check what command has been send with data
@@ -293,25 +310,21 @@ void interruptHandler(void)
         // In case the data was a ping save the data in neighbor table
         case COMMAND_PING:
         case COMMAND_PING_END:
-            for(int i = 0; i < 9; i++){
-                memcpy(broadcastMessages[9 - i], broadcastMessages[8 - i], 32);
-            }
-            memcpy(broadcastMessages[0], received_packet, 32);
-
             saveRemoteNeighborTable(received_packet[0], &received_packet[3], packetLength - 2, received_packet[2]);
+
+            memmove(&broadcastMessages[1], &broadcastMessages[0], 9 * 32);
+            memcpy(broadcastMessages[0], received_packet, 32);
             break;
         
         // In case the data was sensor data send it over if the data was ment for me and otherwise save it in buffer
         case COMMAND_DATA:
-            for(int i = 0; i < 9; i++){
-                memcpy(dataMessages[9 - i], dataMessages[8 - i], 32);
-            }
-            memcpy(dataMessages[0], received_packet, 32);
-
             if(received_packet[2] == address){
-                if(received_packet[3] != address) sendRadioData(received_packet[3], received_packet + 4, packetLength - 4); 
+                if(received_packet[3] != address) sendRadioData(received_packet[3], received_packet + 4, packetLength - 4, false); 
                 else saveReceivedData(received_packet + 4, packetLength - 4);
             }
+
+            memmove(&dataMessages[1], &dataMessages[0], 9 * 32);
+            memcpy(dataMessages[0], received_packet, 32);
             break;
 
         default:
@@ -319,6 +332,8 @@ void interruptHandler(void)
         }
 
 	}
+
+    memset(received_packet, 0, 32);
 }
 
 // Updata weights of direct neighbors
