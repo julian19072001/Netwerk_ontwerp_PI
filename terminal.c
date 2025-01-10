@@ -8,105 +8,81 @@
 #include <address.h>
 #include <data.h>
 #include <time.h>
+#include <warnings.h>
 
 #define REAL_POSITION(max, actual) (max - actual) 
 
-typedef enum windowTypes{
-    mainWindow,
-    identification,
-    debug,
-    plantSettings,
-    roomSettings
-}windowType;
-
-typedef struct roomSettings{
-    uint8_t tempratureSensor;
-    uint8_t humiditySensor;
-    uint8_t lightSensor;
-
-    float temprature;
-    float humidity;
-    float lightLevel;
-
-    time_t lastTemperature;
-    time_t lastHumidity;
-    time_t lastLight;
-}roomSettings_t;
-
-typedef struct plantSettings{
-    uint8_t groundSensor;
-    int roomNumber;
-
-    float groundWater;
-
-    time_t lastGround;
-
-    plantType_t typePlant; 
-}plantSettings_t;
-
 void setupPlantData(plant_t *plantInfoLocation){
-    plantInfoLocation[0].name = "Test plant 1";
+    plantInfoLocation[0].name = "Kentia";
 
-    plantInfoLocation[0].minimumTemperature = 10;
-    plantInfoLocation[0].maximumTemperature = 20;
-    plantInfoLocation[0].optimalTemperature = 20;
+    plantInfoLocation[0].minimumTemperature = -4;
+    plantInfoLocation[0].maximumTemperature = 38;
+    plantInfoLocation[0].optimalTemperature = 13;
 
-    plantInfoLocation[0].minimumHumidity = 40;
+    plantInfoLocation[0].minimumHumidity = 30;
     plantInfoLocation[0].maximumHumidity = 70;
+    plantInfoLocation[0].optimalHumidity = 50;
 
-    plantInfoLocation[0].minimumLightneeds = 100;
-    plantInfoLocation[0].maximumLightneeds = 1000;
+    plantInfoLocation[0].minimumLightneeds = 300;
+    plantInfoLocation[0].maximumLightneeds = 900;
+    plantInfoLocation[0].optimalLightneeds = 700;
 
-    plantInfoLocation[0].minimumWaterheight = 5;
-    plantInfoLocation[0].maximumWaterheight = 20;
+    plantInfoLocation[0].minimumWaterheight = 30;
+    plantInfoLocation[0].maximumWaterheight = 80;
 
 
-    plantInfoLocation[1].name = "Test plant 2";
+    plantInfoLocation[1].name = "Chinese Money Plant";
 
     plantInfoLocation[1].minimumTemperature = 10;
-    plantInfoLocation[1].maximumTemperature = 20;
+    plantInfoLocation[1].maximumTemperature = 30;
     plantInfoLocation[1].optimalTemperature = 20;
 
-    plantInfoLocation[1].minimumHumidity = 40;
-    plantInfoLocation[1].maximumHumidity = 70;
+    plantInfoLocation[1].minimumHumidity = 30;
+    plantInfoLocation[1].maximumHumidity = 50;
+    plantInfoLocation[1].optimalHumidity = 40;
 
-    plantInfoLocation[1].minimumLightneeds = 100;
-    plantInfoLocation[1].maximumLightneeds = 1000;
+    plantInfoLocation[1].minimumLightneeds = 200;
+    plantInfoLocation[1].maximumLightneeds = 700;
+    plantInfoLocation[1].optimalLightneeds = 500;
 
-    plantInfoLocation[1].minimumWaterheight = 10;
-    plantInfoLocation[1].maximumWaterheight = 20;
+    plantInfoLocation[1].minimumWaterheight = 5;
+    plantInfoLocation[1].maximumWaterheight = 90;
 
 
-    plantInfoLocation[2].name = "Test plant 3";
+    plantInfoLocation[2].name = "Spider Plant";
 
     plantInfoLocation[2].minimumTemperature = 10;
-    plantInfoLocation[2].maximumTemperature = 20;
+    plantInfoLocation[2].maximumTemperature = 30;
     plantInfoLocation[2].optimalTemperature = 20;
 
-    plantInfoLocation[2].minimumHumidity = 50;
+    plantInfoLocation[2].minimumHumidity = 30;
     plantInfoLocation[2].maximumHumidity = 70;
+    plantInfoLocation[1].optimalHumidity = 55;
 
-    plantInfoLocation[2].minimumLightneeds = 110;
-    plantInfoLocation[2].maximumLightneeds = 1000;
+    plantInfoLocation[2].minimumLightneeds = 100;
+    plantInfoLocation[2].maximumLightneeds = 500;
+    plantInfoLocation[2].optimalLightneeds = 350;
 
-    plantInfoLocation[2].minimumWaterheight = 10;
-    plantInfoLocation[2].maximumWaterheight = 20;
+    plantInfoLocation[2].minimumWaterheight = 20;
+    plantInfoLocation[2].maximumWaterheight = 80;
 
 
-    plantInfoLocation[3].name = "Test plant 4";
+    plantInfoLocation[3].name = "Jade Plant";
 
-    plantInfoLocation[3].minimumTemperature = 15;
-    plantInfoLocation[3].maximumTemperature = 20;
-    plantInfoLocation[3].optimalTemperature = 20;
+    plantInfoLocation[3].minimumTemperature = 10;
+    plantInfoLocation[3].maximumTemperature = 26;
+    plantInfoLocation[3].optimalTemperature = 22;
 
-    plantInfoLocation[3].minimumHumidity = 50;
-    plantInfoLocation[3].maximumHumidity = 70;
+    plantInfoLocation[3].minimumHumidity = 30;
+    plantInfoLocation[3].maximumHumidity = 80;
+    plantInfoLocation[3].optimalHumidity = 55;
 
-    plantInfoLocation[3].minimumLightneeds = 110;
-    plantInfoLocation[3].maximumLightneeds = 1000;
+    plantInfoLocation[3].minimumLightneeds = 300;
+    plantInfoLocation[3].maximumLightneeds = 700;
+    plantInfoLocation[3].optimalLightneeds = 500;
 
-    plantInfoLocation[3].minimumWaterheight = 5;
-    plantInfoLocation[3].maximumWaterheight = 20;
+    plantInfoLocation[3].minimumWaterheight = 30;
+    plantInfoLocation[3].maximumWaterheight = 70;
 }
 
 float uint8_array_to_float(uint8_t* array) {
@@ -211,6 +187,7 @@ int main(int nArgc, char* aArgv[]) {
     WINDOW *debugButton     = newwin(3, 16, 0, maxCols - 50);
     WINDOW *plantInfo[3];
     WINDOW *roomInfo[3];
+    WINDOW *warningWindow   = newwin(maxRows - 4, maxCols - 20, 4, 20);
 
     int mainPostions[6] = {
         3,
@@ -279,6 +256,8 @@ int main(int nArgc, char* aArgv[]) {
     rooms[0].temprature = 0;
     rooms[0].humidity = 0;
     rooms[0].lightLevel = 0;
+    rooms[0].solution = 0;
+    rooms[0].conditionwarnings = 0;
 
     rooms[1].tempratureSensor = TEMP_HUMID_START_ADDRESS + 1;
     rooms[1].humiditySensor = TEMP_HUMID_START_ADDRESS + 1;
@@ -286,6 +265,8 @@ int main(int nArgc, char* aArgv[]) {
     rooms[1].temprature = 0;
     rooms[1].humidity = 0;
     rooms[1].lightLevel = 0;
+    rooms[1].solution = 0;
+    rooms[1].conditionwarnings = 0;
 
     rooms[2].tempratureSensor = TEMP_HUMID_START_ADDRESS + 2;
     rooms[2].humiditySensor = TEMP_HUMID_START_ADDRESS + 2;
@@ -293,6 +274,8 @@ int main(int nArgc, char* aArgv[]) {
     rooms[2].temprature = 0;
     rooms[2].humidity = 0;
     rooms[2].lightLevel = 0;
+    rooms[2].solution = 0;
+    rooms[2].conditionwarnings = 0;
 
     uint8_t roomShown = 0;
 
@@ -302,16 +285,20 @@ int main(int nArgc, char* aArgv[]) {
     plants[0].groundSensor = GROUND_WATER_START_ADDRESS;
     plants[0].groundWater = 0;
     plants[0].typePlant = TYPE_A;
+    plants[0].warnings.warningtype = 0;
 
     plants[1].roomNumber = 0;
     plants[1].groundSensor = GROUND_WATER_START_ADDRESS + 1;
     plants[1].groundWater = 0;
     plants[1].typePlant = TYPE_B;
+    plants[1].warnings.warningtype = 0;
 
     plants[2].roomNumber = 0;
     plants[2].groundSensor = GROUND_WATER_START_ADDRESS + 2;
     plants[2].groundWater = 0;
     plants[2].typePlant = TYPE_C;
+    plants[2].warnings.warningtype = 0;
+
 
     uint8_t plantShown = 0;
 
@@ -382,6 +369,9 @@ int main(int nArgc, char* aArgv[]) {
             if(plants[i].groundWater > 0 && (get_current_time() - plants[i].lastGround > 5)) plants[i].groundWater = 0;
         }
 
+        plantBasedWarnings(plants, rooms, plantInformation);
+        roomBasedWarnings(plants, rooms, plantInformation);
+
         // Draw things that always need to be displayed
         // Draw line underneath navigation buttons
         if(windowShown != mainWindow){
@@ -399,6 +389,11 @@ int main(int nArgc, char* aArgv[]) {
         // Draw window specific things and handle their buttons
         switch(windowShown){
             case mainWindow:
+                if(cycles > 300){
+                    drawButton(warningWindow, 8, 0,0,"");
+                    returnWarnings(plants, rooms);
+                    cycles = 0;
+                }
                 mvprintw(1, 1, "Number of connected nodes: %d   ", getOwnIds(ids));
 
                 // Draw identification button
@@ -706,18 +701,17 @@ int main(int nArgc, char* aArgv[]) {
                         wbkgd(plantLimitations, COLOR_PAIR(2));
                         touchwin(plantLimitations);
                         wrefresh(plantLimitations);
-                        mvwprintw(plantLimitations, 1, 1, "Minimum temperature: %d C", plantInformation[plants[plantShown].typePlant].minimumTemperature);
-                        mvwprintw(plantLimitations, 2, 1, "Maximum temperature: %d C", plantInformation[plants[plantShown].typePlant].maximumTemperature);
-                        mvwprintw(plantLimitations, 3, 1, "Optimal temperature: %d C", plantInformation[plants[plantShown].typePlant].optimalTemperature);
+                        mvwprintw(plantLimitations, 1, 1, "Minimum temperature: %3d C", plantInformation[plants[plantShown].typePlant].minimumTemperature);
+                        mvwprintw(plantLimitations, 2, 1, "Maximum temperature: %3d C", plantInformation[plants[plantShown].typePlant].maximumTemperature);
 
-                        mvwprintw(plantLimitations, 4, 1, "Minimum humidity: %d%%", plantInformation[plants[plantShown].typePlant].minimumHumidity);
-                        mvwprintw(plantLimitations, 5, 1, "Maximum humidity: %d%%", plantInformation[plants[plantShown].typePlant].maximumHumidity);
+                        mvwprintw(plantLimitations, 3, 1, "Minimum humidity: %3d%%", plantInformation[plants[plantShown].typePlant].minimumHumidity);
+                        mvwprintw(plantLimitations, 4, 1, "Maximum humidity: %3d%%", plantInformation[plants[plantShown].typePlant].maximumHumidity);
 
-                        mvwprintw(plantLimitations, 7, 1, "Minimum light level: %d Wm", plantInformation[plants[plantShown].typePlant].minimumLightneeds);
-                        mvwprintw(plantLimitations, 8, 1, "Maximum light level: %d Wm", plantInformation[plants[plantShown].typePlant].maximumLightneeds);
+                        mvwprintw(plantLimitations, 7, 1, "Minimum light level: %4d Wm", plantInformation[plants[plantShown].typePlant].minimumLightneeds);
+                        mvwprintw(plantLimitations, 8, 1, "Maximum light level: %4d Wm", plantInformation[plants[plantShown].typePlant].maximumLightneeds);
 
-                        mvwprintw(plantLimitations, 9, 1, "Minimum water height: %d%%", plantInformation[plants[plantShown].typePlant].minimumWaterheight);
-                        mvwprintw(plantLimitations, 10, 1, "Maximum water height: %d%%", plantInformation[plants[plantShown].typePlant].maximumWaterheight);
+                        mvwprintw(plantLimitations, 9, 1, "Minimum water height: %3d%%", plantInformation[plants[plantShown].typePlant].minimumWaterheight);
+                        mvwprintw(plantLimitations, 10, 1, "Maximum water height: %3d%%", plantInformation[plants[plantShown].typePlant].maximumWaterheight);
                         wrefresh(plantLimitations);
 
                         werase(plantInformationBox);
