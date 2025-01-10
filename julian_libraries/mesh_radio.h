@@ -80,4 +80,6 @@ void printBroadcasts(WINDOW *window);
 // Prints the last data messages on screen
 void printDataMessages(WINDOW *window);
 
+void doRead();
+
 #endif // MESH_RADIO_H_

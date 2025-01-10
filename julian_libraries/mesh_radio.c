@@ -40,6 +40,8 @@ static volatile uint8_t rxWritePointer, rxReadPointer, rxBuffer[RX_BUFFER_DEPTH]
 uint8_t broadcastMessages[DEBUG_LINES][32];
 uint8_t dataMessages[DEBUG_LINES][32];
 
+bool isNewData;
+
 // Setup for NRF communication
 void radioInit(uint8_t setAddress)
 {              
@@ -291,7 +293,12 @@ void encryption(uint8_t *data, uint8_t dataSize){
 // Interrupt from NFR IC
 void interruptHandler(void) 
 {
-	uint8_t txDs, maxRt, rxDr;
+	isNewData = true;
+}
+
+void doRead(){
+    if(!isNewData) return;
+    uint8_t txDs, maxRt, rxDr;
 	uint8_t packetLength;
     static uint8_t received_packet[32];				    // Create a place to store received data
 	
@@ -334,6 +341,7 @@ void interruptHandler(void)
 	}
 
     memset(received_packet, 0, 32);
+    isNewData = false;
 }
 
 // Updata weights of direct neighbors

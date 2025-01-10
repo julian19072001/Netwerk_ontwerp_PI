@@ -308,6 +308,7 @@ int main(int nArgc, char* aArgv[]) {
     uint8_t ids[MAX_SENDERS] = {0};
 
     while(1){
+        doRead();
 
         // Update touch
         RPiTouch_UpdateTouch();
@@ -390,7 +391,10 @@ int main(int nArgc, char* aArgv[]) {
         switch(windowShown){
             case mainWindow:
                 if(cycles > 300){
-                    drawButton(warningWindow, 8, 0,0,"");
+                    wbkgd(warningWindow, COLOR_PAIR(8));
+                    touchwin(warningWindow);
+                    mvwprintw(warningWindow, 0, 0, "                                                                                                                                                                                                                                                                                                                                                                                                                                                ");
+                    wrefresh(warningWindow);
                     returnWarnings(plants, rooms);
                     cycles = 0;
                 }
@@ -404,28 +408,28 @@ int main(int nArgc, char* aArgv[]) {
 
                 // Draw room info
                 drawButton(plantInfo[0], 9, 1, 6, "Plant 1:");
-                mvwprintw(plantInfo[0], 2, 2, "Water level: %2.0f%%", plants[0].groundWater);
+                mvwprintw(plantInfo[0], 2, 2, "Water level: %3.0f%%", plants[0].groundWater);
                 wrefresh(plantInfo[0]);
                 drawButton(plantInfo[1], 10, 1, 6, "Plant 2:");
-                mvwprintw(plantInfo[1], 2, 2, "Water level: %2.0f%%", plants[1].groundWater);
+                mvwprintw(plantInfo[1], 2, 2, "Water level: %3.0f%%", plants[1].groundWater);
                 wrefresh(plantInfo[1]);
                 drawButton(plantInfo[2], 9, 1, 6, "Plant 3:");
-                mvwprintw(plantInfo[2], 2, 2, "Water level: %2.0f%%", plants[2].groundWater);
+                mvwprintw(plantInfo[2], 2, 2, "Water level: %3.0f%%", plants[2].groundWater);
                 wrefresh(plantInfo[2]);
 
                 drawButton(roomInfo[0], 10, 1, 7, "Room 1:");
                 mvwprintw(roomInfo[0], 2, 0, "  Temprature: %2.0f C  ", rooms[0].temprature);
-                mvwprintw(roomInfo[0], 3, 0, "    Humidity: %2.0f%%   ", rooms[0].humidity);
+                mvwprintw(roomInfo[0], 3, 0, "    Humidity: %3.0f%%   ", rooms[0].humidity);
                 mvwprintw(roomInfo[0], 4, 0, " Light level:%4.0fWm ", rooms[0].lightLevel);
                 wrefresh(roomInfo[0]);
                 drawButton(roomInfo[1], 9, 1, 7, "Room 2:");
                 mvwprintw(roomInfo[1], 2, 0, "  Temprature: %2.0f C  ", rooms[1].temprature);
-                mvwprintw(roomInfo[1], 3, 0, "    Humidity: %2.0f%%   ", rooms[1].humidity);
+                mvwprintw(roomInfo[1], 3, 0, "    Humidity: %3.0f%%   ", rooms[1].humidity);
                 mvwprintw(roomInfo[1], 4, 0, " Light level:%4.0fWm ", rooms[1].lightLevel);
                 wrefresh(roomInfo[1]);
                 drawButton(roomInfo[2], 10, 1, 7, "Room 3:");
                 mvwprintw(roomInfo[2], 2, 0, "  Temprature: %2.0f C  ", rooms[2].temprature);
-                mvwprintw(roomInfo[2], 3, 0, "    Humidity: %2.0f%%   ", rooms[2].humidity);
+                mvwprintw(roomInfo[2], 3, 0, "    Humidity: %3.0f%%   ", rooms[2].humidity);
                 mvwprintw(roomInfo[2], 4, 0, " Light level:%4.0fWm ", rooms[2].lightLevel);
                 wrefresh(roomInfo[2]);
 
