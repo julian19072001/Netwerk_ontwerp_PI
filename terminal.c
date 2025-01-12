@@ -1,4 +1,4 @@
-// gcc -Wall -o terminal terminal.c ~/Netwerk_ontwerp_PI/hva_libraries/rpitouch/*.c -I/home/julian/Netwerk_ontwerp_PI/hva_libraries/rpitouch ~/Netwerk_ontwerp_PI/julian_libraries/*.c -I/home/julian/Netwerk_ontwerp_PI/julian_libraries -lncurses -lwiringPi
+// gcc -Wall -o terminal terminal.c ~/Netwerk_ontwerp_PI/hva_libraries/rpitouch/*.c -I/home/julian/Netwerk_ontwerp_PI/hva_libraries/rpitouch ~/Netwerk_ontwerp_PI/libraries/*.c -I/home/julian/Netwerk_ontwerp_PI/libraries -lncurses -lwiringPi
 
 #include <ncurses.h>
 #include <rpitouch.h>
@@ -258,6 +258,7 @@ int main(int nArgc, char* aArgv[]) {
     rooms[0].lightLevel = 0;
     rooms[0].solution = 0;
     rooms[0].conditionwarnings = 0;
+    rooms[0].conditionFlag = 0;
 
     rooms[1].tempratureSensor = TEMP_HUMID_START_ADDRESS + 1;
     rooms[1].humiditySensor = TEMP_HUMID_START_ADDRESS + 1;
@@ -267,6 +268,7 @@ int main(int nArgc, char* aArgv[]) {
     rooms[1].lightLevel = 0;
     rooms[1].solution = 0;
     rooms[1].conditionwarnings = 0;
+    rooms[1].conditionFlag = 0;
 
     rooms[2].tempratureSensor = TEMP_HUMID_START_ADDRESS + 2;
     rooms[2].humiditySensor = TEMP_HUMID_START_ADDRESS + 2;
@@ -276,6 +278,7 @@ int main(int nArgc, char* aArgv[]) {
     rooms[2].lightLevel = 0;
     rooms[2].solution = 0;
     rooms[2].conditionwarnings = 0;
+    rooms[1].conditionFlag = 0;
 
     uint8_t roomShown = 0;
 
@@ -396,6 +399,16 @@ int main(int nArgc, char* aArgv[]) {
                     mvwprintw(warningWindow, 0, 0, "                                                                                                                                                                                                                                                                                                                                                                                                                                                ");
                     wrefresh(warningWindow);
                     returnWarnings(plants, rooms);
+                    rooms[0].solution = 0;
+                    rooms[0].conditionwarnings = 0;
+                    rooms[0].conditionFlag = 0;
+                    rooms[1].solution = 0;
+                    rooms[1].conditionwarnings = 0;
+                    rooms[1].conditionFlag = 0;
+                    rooms[2].solution = 0;
+                    rooms[2].conditionwarnings = 0;
+                    rooms[2].conditionFlag = 0;
+                    
                     cycles = 0;
                 }
                 mvprintw(1, 1, "Number of connected nodes: %d   ", getOwnIds(ids));
@@ -408,13 +421,13 @@ int main(int nArgc, char* aArgv[]) {
 
                 // Draw room info
                 drawButton(plantInfo[0], 9, 1, 6, "Plant 1:");
-                mvwprintw(plantInfo[0], 2, 2, "Water level: %3.0f%%", plants[0].groundWater);
+                mvwprintw(plantInfo[0], 2, 2, "Water level: %3.0f%%                     ", plants[0].groundWater);
                 wrefresh(plantInfo[0]);
                 drawButton(plantInfo[1], 10, 1, 6, "Plant 2:");
-                mvwprintw(plantInfo[1], 2, 2, "Water level: %3.0f%%", plants[1].groundWater);
+                mvwprintw(plantInfo[1], 2, 2, "Water level: %3.0f%%                     ", plants[1].groundWater);
                 wrefresh(plantInfo[1]);
                 drawButton(plantInfo[2], 9, 1, 6, "Plant 3:");
-                mvwprintw(plantInfo[2], 2, 2, "Water level: %3.0f%%", plants[2].groundWater);
+                mvwprintw(plantInfo[2], 2, 2, "Water level: %3.0f%%                     ", plants[2].groundWater);
                 wrefresh(plantInfo[2]);
 
                 drawButton(roomInfo[0], 10, 1, 7, "Room 1:");
@@ -607,7 +620,7 @@ int main(int nArgc, char* aArgv[]) {
                     clear();
                 }
 
-                if(cycles > 200){
+                if(cycles > 100){
                     werase(roomInformationBox);
                     wrefresh(roomInformationBox);
                     wbkgd(roomInformationBox, COLOR_PAIR(2));
@@ -688,7 +701,7 @@ int main(int nArgc, char* aArgv[]) {
 
                 mvprintw(4, 0, "Plant type:");
 
-                if(cycles > 300){
+                if(cycles > 100){
                     for(int i = 0; i < 4; i++){
                         text_length = strlen(plantInformation[i].name);
                         start_col = (quarterCols - text_length) / 2;

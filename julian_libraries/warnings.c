@@ -20,10 +20,6 @@ void plantBasedWarnings(plantSettings_t *plants, roomSettings_t *rooms, plant_t 
                 currentPlantWarnings.tempWarning = 1;
             } else if (temprature > currentPlantSetting.maximumTemperature){
                 currentPlantWarnings.tempWarning = 2;
-            } else if(temprature < currentPlantSetting.minimumTemperature * 1.2){
-                currentPlantWarnings.tempWarning = 3;
-            } else if (temprature > currentPlantSetting.maximumTemperature * 0.8){
-                currentPlantWarnings.tempWarning = 4;
             } else {
                 currentPlantWarnings.tempWarning = 0;
             }
@@ -108,30 +104,24 @@ int compareRoomSuitability(plantSettings_t *plants, roomSettings_t *rooms, plant
     plant_t plantSetting = plantSettings[plants[plant].typePlant];
 
     // We will assign a score based on the factors
-    if (plantWarnings.Plantwarning & TEMP) {
+    if (plantWarnings.Plantwarning & TEMP && rooms[newroom].temprature) {
         score = plantSetting.optimalTemperature - rooms[newroom].temprature;
 
-        if(score < 0){
-            score = -score;
-        }
+        if(score < 0) score = -score;
 
         bestRoomScore+= score;
     }
-    if (plantWarnings.Plantwarning & HUM) {
+    if (plantWarnings.Plantwarning & HUM && rooms[newroom].humidity) {
         score = plantSetting.optimalHumidity - rooms[newroom].humidity;
 
-        if(score < 0){
-            score = -score;
-        }
+        if(score < 0) score = -score;
 
         bestRoomScore+= score;
     }
-    if (plantWarnings.Plantwarning & LIGHT) {
+    if (plantWarnings.Plantwarning & LIGHT && rooms[newroom].lightLevel) {
         score = plantSetting.optimalLightneeds - rooms[newroom].lightLevel;
 
-        if(score < 0){
-            score = -score;
-        }
+        if(score < 0) score = -score;
 
         bestRoomScore+= score;
     }
@@ -139,10 +129,10 @@ int compareRoomSuitability(plantSettings_t *plants, roomSettings_t *rooms, plant
     return bestRoomScore;
 }
 
-int findLowestValueIndex(int16_t array[], int size) {
+uint8_t findLowestValueIndex(int16_t array[]) {
     int lowestIndex = 0;  // Start by assuming the first element has the lowest value
     
-    for (int i = 1; i < size; i++) {
+    for (uint8_t i = 0; i < 3; i++) {
         if (array[i] < array[lowestIndex]) {
             lowestIndex = i;  // Update the index of the lowest value
         }
@@ -151,7 +141,7 @@ int findLowestValueIndex(int16_t array[], int size) {
     return lowestIndex;
 }
 
-void warningloop(plantSettings_t *plants, roomSettings_t *rooms, plant_t *plantSettings, uint16_t room, uint8_t warningType, int plantNumber){
+void warningloop(plantSettings_t *plants, roomSettings_t *rooms, plant_t *plantSettings, uint16_t room, int plantNumber){
     warnings_t functionWarnings = plants[plantNumber].warnings;
     
     for (int plantindex = 0; plantindex < 3; plantindex++)
@@ -161,164 +151,94 @@ void warningloop(plantSettings_t *plants, roomSettings_t *rooms, plant_t *plantS
 
         warnings_t loopWarnings = plants[plantindex].warnings;
 
-        if(loopWarnings.warningtype & warningType){
-            switch (warningType) {
-                case TEMP:
-                    if (((loopWarnings.tempWarning == 1) || (loopWarnings.tempWarning == 3)) &&
-                        ((functionWarnings.tempWarning == 1) || (functionWarnings.tempWarning == 3))) {
-                                
-                        // Update the warningtype bit for temperature
-                        if (rooms[room].solution > 0) {
-                            rooms[room].solution |= TOCOLD;  // Set the TEMP bit if it wasn't already set
-                        } 
+        if (((loopWarnings.tempWarning == 1)) &&
+            ((functionWarnings.tempWarning == 1))) {
+                    
+            // Update the warningtype bit for temperature
+            rooms[room].solution &= ~TOHOT;
+            rooms[room].solution |= TOCOLD;  // Set the TEMP bit if it wasn't already set
+            rooms[room].conditionFlag |= SAMETYPE;  // Set the TEMP bit if it wasn't already set
 
-                        rooms[room].conditionFlag |= SAMETYPE;  // Set the TEMP bit if it wasn't already set
+        } else if (((loopWarnings.tempWarning == 2)) &&
+                    ((functionWarnings.tempWarning == 2))) {
+            
+            rooms[room].solution &= ~TOCOLD;
+            rooms[room].solution |= TOHOT;  // Set the TEMP bit if it wasn't already set
+            rooms[room].conditionFlag |= SAMETYPE;  // Set the TEMP bit if it wasn't already set
 
-                    } else if (((loopWarnings.tempWarning == 2) || (loopWarnings.tempWarning == 4)) &&
-                               ((functionWarnings.tempWarning == 2) || (functionWarnings.tempWarning == 4))) {
-
-                        if (rooms[room].solution > 0) {
-                            rooms[room].solution |= TOHOT;  // Set the TEMP bit if it wasn't already set
-                        }
-                            
-                            
-                            rooms[room].conditionFlag |= SAMETYPE;  // Set the TEMP bit if it wasn't already set
-
-                    }
-                    break;
-
-                case HUM:
-                    if (((loopWarnings.humWarning == 1) || (loopWarnings.humWarning == 3)) &&
-                        ((functionWarnings.humWarning == 1) || (functionWarnings.humWarning == 3))) {
-                        // Update the warningtype bit for Hum
-                        if (rooms[room].solution > 0) {
-                            rooms[room].solution |= TODRY;  // Set the TEMP bit if it wasn't already set
-                        }
-
-                        rooms[room].conditionFlag |= SAMETYPE;  // Set the TEMP bit if it wasn't already set
-
-                    } else if (((loopWarnings.humWarning == 2) || (loopWarnings.humWarning == 4)) &&
-                                ((functionWarnings.humWarning == 2) || (functionWarnings.humWarning == 4))) {
-                        // Update the warningtype bit for Hum
-                        if (rooms[room].solution > 0) {
-                            rooms[room].solution |= TOWET;  // Set the TEMP bit if it wasn't already set
-                        }
-                        
-                        rooms[room].conditionFlag |= SAMETYPE;  // Set the TEMP bit if it wasn't already set
-                    }
-                    break;
-
-                case LIGHT:
-                    if (((loopWarnings.LightWarning == 1) || (loopWarnings.LightWarning == 3)) &&
-                        ((functionWarnings.LightWarning == 1) || (functionWarnings.LightWarning == 3))) {
-                        if (rooms[room].solution > 0) {
-                            rooms[room].solution |= TODARK;  // Set the TEMP bit if it wasn't already set
-                        }
-
-                        rooms[room].conditionFlag |= SAMETYPE;  // Set the TEMP bit if it wasn't already set
-
-                    } else if (((loopWarnings.LightWarning == 2) || (loopWarnings.LightWarning == 4)) &&
-                                ((functionWarnings.LightWarning == 2) || (functionWarnings.LightWarning == 4))) {
-                        if (rooms[room].solution > 0) {
-                            rooms[room].solution |= TOLIGHT;  // Set the TEMP bit if it wasn't already set
-                        }
-                        
-                        rooms[room].conditionFlag |= SAMETYPE;  // Set the TEMP bit if it wasn't already set
-
-                    }
-                    break;
-
-                default:
-                    break;
-            }
+        } else {
+            rooms[room].solution &= ~TOCOLD;
+            rooms[room].solution &= ~TOHOT;
         }
-        
-        if(!(loopWarnings.warningtype & warningType)) {
-                // Check if the tempWarning and waterWarning are active for either plant
-                if (((loopWarnings.tempWarning == 1) || (loopWarnings.tempWarning == 3)) && 
-                    ((functionWarnings.waterWarning == 1) || (functionWarnings.waterWarning == 3))) {
-                    // Apply condition for the DRYING warning only if it's not already set
-                    rooms[room].conditionwarnings |= DRYING;
-                    rooms[room].conditionFlag |= DIFFTYPE;  // Set the TEMP bit if it wasn't already set
-                } 
 
-                // Check the opposite arrangement (swapped plant index and number)
-                else if (((functionWarnings.tempWarning == 1) || (functionWarnings.tempWarning == 3)) && 
-                        ((loopWarnings.waterWarning == 1) || (loopWarnings.waterWarning == 3))) {
-                    // Apply condition for the DRYING warning only if it's not already set
-                        rooms[room].conditionwarnings |= DRYING;
-                        rooms[room].conditionFlag |= DIFFTYPE;  // Set the TEMP bit if it wasn't already set
-                }
+        if (((loopWarnings.humWarning == 1)) && ((functionWarnings.humWarning == 1))) {
+            // Update the warningtype bit for Hum
+            rooms[room].solution &= ~TOWET;
+            rooms[room].solution |= TODRY;  // Set the TEMP bit if it wasn't already set
+            rooms[room].conditionFlag |= SAMETYPE;  // Set the TEMP bit if it wasn't already set
 
-                // Check if the waterWarning and humWarning are active for either plant
-                if (((loopWarnings.waterWarning == 4) || (loopWarnings.waterWarning == 3)) && 
-                    ((functionWarnings.humWarning == 4) || (functionWarnings.humWarning == 3))) {
-                    // Apply condition for the OVERWATERING warning only if it's not already set
-                        rooms[room].conditionwarnings |= OVERWATERING;
-                        rooms[room].conditionFlag |= DIFFTYPE;  // Set the TEMP bit if it wasn't already set
-                } 
+        } else if (((loopWarnings.humWarning == 2)) && ((functionWarnings.humWarning == 2))) {
+            // Update the warningtype bit for Hum
+            rooms[room].solution &= ~TODRY;
+            rooms[room].solution |= TOWET;  // Set the TEMP bit if it wasn't already set
+            rooms[room].conditionFlag |= SAMETYPE;  // Set the TEMP bit if it wasn't already set
+        } else {
+            rooms[room].solution &= ~TODRY;
+            rooms[room].solution &= ~TOWET;
+        }
 
-                // Check the opposite arrangement (swapped plant index and number)
-                else if (((functionWarnings.waterWarning == 4) || (functionWarnings.waterWarning == 3)) && 
-                        ((loopWarnings.humWarning == 4) || (loopWarnings.humWarning == 3))) {
-                    // Apply condition for the OVERWATERING warning only if it's not already set
-                        rooms[room].conditionwarnings |= OVERWATERING;
-                        rooms[room].conditionFlag |= DIFFTYPE;  // Set the TEMP bit if it wasn't already set
-                }
+        if (((loopWarnings.LightWarning == 1)) && ((functionWarnings.LightWarning == 1))) {
+            rooms[room].solution &= ~TOLIGHT;
+            rooms[room].solution |= TODARK;  // Set the TEMP bit if it wasn't already set
+            rooms[room].conditionFlag |= SAMETYPE;  // Set the TEMP bit if it wasn't already set
 
-                // Check for FREEZING condition
-                if (((loopWarnings.tempWarning == 3) || (loopWarnings.tempWarning == 4)) && 
-                    ((functionWarnings.waterWarning == 4) || (functionWarnings.waterWarning == 3))) {
-                    // Apply condition for the FREEZING warning only if it's not already set
-                        rooms[room].conditionwarnings |= FREEZING;
-                        rooms[room].conditionFlag |= DIFFTYPE;  // Set the TEMP bit if it wasn't already set
-                } 
+        } else if (((loopWarnings.LightWarning == 2)) && ((functionWarnings.LightWarning == 2))) {
+            rooms[room].solution &= ~TODARK;
+            rooms[room].solution |= TOLIGHT;  // Set the TEMP bit if it wasn't already set
+            rooms[room].conditionFlag |= SAMETYPE;  // Set the TEMP bit if it wasn't already set
 
-                // Check the opposite arrangement (swapped plant index and number)
-                else if (((functionWarnings.tempWarning == 3) || (functionWarnings.tempWarning == 4)) && 
-                        ((loopWarnings.waterWarning == 4) || (loopWarnings.waterWarning == 3))) {
-                    // Apply condition for the FREEZING warning only if it's not already set
-                        rooms[room].conditionwarnings |= FREEZING;
-                        rooms[room].conditionFlag |= DIFFTYPE;  // Set the TEMP bit if it wasn't already set
-                }
+        } else {
+            rooms[room].solution &= ~TOLIGHT;
+            rooms[room].solution &= ~TODARK;
+        }
 
-                // Check for WARMING condition
-                if (((loopWarnings.tempWarning == 4) || (loopWarnings.tempWarning == 3)) && 
-                    ((functionWarnings.LightWarning == 4) || (functionWarnings.LightWarning == 3))) {
-                    // Apply condition for the WARMING warning only if it's not already set
-                        rooms[room].conditionwarnings |= WARMING;
-                        rooms[room].conditionFlag |= DIFFTYPE;  // Set the TEMP bit if it wasn't already set
-                } 
+        // Check if the climate in the room is too dry
+        if (((functionWarnings.tempWarning == 1) && (loopWarnings.waterWarning == 1))) {
+                rooms[room].conditionwarnings |= DRYING;
+                rooms[room].conditionFlag |= DIFFTYPE;  
+        } else rooms[room].conditionwarnings &= ~DRYING;
 
-                // Check the opposite arrangement (swapped plant index and number)
-                else if (((functionWarnings.tempWarning == 4) || (functionWarnings.tempWarning == 3)) && 
-                        ((loopWarnings.LightWarning == 4) || (loopWarnings.LightWarning == 3))) {
-                    // Apply condition for the WARMING warning only if it's not already set
-                        rooms[room].conditionwarnings |= WARMING;
-                        rooms[room].conditionFlag |= DIFFTYPE;  // Set the TEMP bit if it wasn't already set
-                }
+        // Check if the climate in the room is too wet
+        if (((loopWarnings.waterWarning == 2) && (functionWarnings.humWarning == 2))) {
+                rooms[room].conditionwarnings |= OVERWATERING;
+                rooms[room].conditionFlag |= DIFFTYPE; 
+        } else rooms[room].conditionwarnings &= ~OVERWATERING;
 
-                // Check for WINDOW condition
-                if (((loopWarnings.humWarning == 4) || (loopWarnings.humWarning == 3)) && 
-                    ((functionWarnings.LightWarning == 4) || (functionWarnings.LightWarning == 3))) {
-                    // Apply condition for the WINDOW warning only if it's not already set
-                        rooms[room].conditionwarnings |= ROOM_WINDOW;
-                        rooms[room].conditionFlag |= DIFFTYPE;  // Set the TEMP bit if it wasn't already set
-                } 
+        // Check if the plants are freezing to death
+        if (((loopWarnings.tempWarning == 1)) && ((functionWarnings.waterWarning == 2))) {
+                rooms[room].conditionwarnings |= FREEZING;
+                rooms[room].conditionFlag |= DIFFTYPE;  
+        } else rooms[room].conditionwarnings &= ~FREEZING;
 
-                // Check the opposite arrangement (swapped plant index and number)
-                else if (((functionWarnings.humWarning == 4) || (functionWarnings.humWarning == 3)) && 
-                        ((loopWarnings.LightWarning == 4) || (loopWarnings.LightWarning == 3))) {
-                    // Apply condition for the WINDOW warning only if it's not already set
-                        rooms[room].conditionwarnings |= ROOM_WINDOW;
-                        rooms[room].conditionFlag |= DIFFTYPE;  // Set the TEMP bit if it wasn't already set
-                }
-            }
+        // Check if the plants are in too much sunlight
+        if (((loopWarnings.tempWarning == 2) && (functionWarnings.LightWarning == 2)) ||
+            ((functionWarnings.tempWarning == 2) && (loopWarnings.LightWarning == 2))) {
+                rooms[room].conditionwarnings |= WARMING;
+                rooms[room].conditionFlag |= DIFFTYPE;  
+        } else rooms[room].conditionwarnings &= ~WARMING;
+
+        // Check if a window should be opened
+        if (((loopWarnings.humWarning == 2)) && ((functionWarnings.LightWarning == 2))) {
+                rooms[room].conditionwarnings |= ROOM_WINDOW;
+                rooms[room].conditionFlag |= DIFFTYPE; 
+        } else rooms[room].conditionwarnings &= ~ROOM_WINDOW;
+
         plants[plantindex].warnings = loopWarnings;
     }
     plants[plantNumber].warnings = functionWarnings;
 }
 
+// Set all room based warnings
 void roomBasedWarnings(plantSettings_t *plants, roomSettings_t *rooms, plant_t *plantSettings){
     int16_t roomvalues[3];
 
@@ -326,53 +246,43 @@ void roomBasedWarnings(plantSettings_t *plants, roomSettings_t *rooms, plant_t *
         roomvalues[i] = 100;
     }
     
-
+    // Check if similair errors occur within the same room more then once
     for (int plant = 0; plant < 3; plant++)
     {   
         warnings_t currentWarnings = plants[plant].warnings;
 
+        warningloop(plants, rooms, plantSettings, plants[plant].roomNumber, plant);
+
         currentWarnings.Plantwarning = 0;
-        if(currentWarnings.tempWarning > 0){
-            warningloop(plants, rooms, plantSettings, plants[plant].roomNumber, TEMP, plant);
-            if(rooms[plants[plant].roomNumber].conditionFlag == 0){
-                currentWarnings.Plantwarning |= TEMP;
-            }
-        } 
+        if(currentWarnings.tempWarning > 0 && rooms[plants[plant].roomNumber].conditionFlag == 0)
+            currentWarnings.Plantwarning |= TEMP;
         
-        if(currentWarnings.humWarning > 0) {
-            warningloop(plants, rooms, plantSettings, plants[plant].roomNumber, HUM, plant);
-            if(rooms[plants[plant].roomNumber].conditionFlag == 0){
-                currentWarnings.Plantwarning |= HUM;
-            }
-        } 
+        if(currentWarnings.humWarning > 0 && rooms[plants[plant].roomNumber].conditionFlag == 0) 
+            currentWarnings.Plantwarning |= HUM;
         
-        if(currentWarnings.LightWarning > 0) {
-            warningloop(plants, rooms, plantSettings, plants[plant].roomNumber, LIGHT, plant);
-            if(rooms[plants[plant].roomNumber].conditionFlag == 0){
-                currentWarnings.Plantwarning |= LIGHT;
-            }
-        } 
+        if(currentWarnings.LightWarning > 0 && rooms[plants[plant].roomNumber].conditionFlag == 0)
+            currentWarnings.Plantwarning |= LIGHT;
 
-        if(currentWarnings.Plantwarning > 0){
-            for(int newroom = 0; newroom < 3; newroom++) {
-                roomvalues[newroom] = compareRoomSuitability(plants, rooms, plantSettings, plant, newroom);
-            }
-
-            currentWarnings.newroom = findLowestValueIndex(roomvalues, 3);
+        for(int newroom = 0; newroom < 3; newroom++) {
+            roomvalues[newroom] = compareRoomSuitability(plants, rooms, plantSettings, plant, newroom);
         }
+
+        currentWarnings.newroom = findLowestValueIndex(roomvalues);
 
         plants[plant].warnings = currentWarnings;
     }
 }
 
+// Function to check if the found value is too high or too low and print that in the picture
 void higherOrLower(uint8_t warningtype, uint8_t line, uint8_t placement){
     if(warningtype == 1){
-        mvprintw(line + 6, 25 + placement, "too low");
+        mvprintw(line + 6, 22 + placement, "too low");
     } else if (warningtype == 2){
-        mvprintw(line + 6, 25 + placement, "too high");
+        mvprintw(line + 6, 22 + placement, "too high");
     }
 }
 
+// Print all the warnings on screen
 void returnWarnings (plantSettings_t *plants, roomSettings_t *rooms){
     uint8_t numberOfWarningLines = 0;
     uint8_t numberOfWarningLinesRoom = 0;
@@ -383,50 +293,50 @@ void returnWarnings (plantSettings_t *plants, roomSettings_t *rooms){
         
         if(!currentWarnings.warningtype) continue;
          
-        mvprintw(numberOfWarningLines + 6, 25, "Plant warnings for %d:       ", plantIndex + 1);
+        mvprintw(numberOfWarningLines + 6, 22, "Plant warnings for %d:       ", plantIndex + 1);
 
         numberOfWarningLines++;
 
         if (currentWarnings.warningtype & TEMP) {
             if(currentWarnings.tempWarning < 3){ 
-                mvprintw(numberOfWarningLines + 6, 25, "Temperature is:                        ");
+                mvprintw(numberOfWarningLines + 6, 22, "Temperature is:                        ");
                 higherOrLower(currentWarnings.tempWarning, numberOfWarningLines, strlen("Temperature is: "));
                 numberOfWarningLines++;
             }
         }
         if (currentWarnings.warningtype & HUM) {
             if(currentWarnings.humWarning < 3){
-                mvprintw(numberOfWarningLines + 6, 25, "Humidity is:                           ");
+                mvprintw(numberOfWarningLines + 6, 22, "Humidity is:                           ");
                 higherOrLower(currentWarnings.humWarning, numberOfWarningLines, strlen("Humidity is: "));
                 numberOfWarningLines++;
             }
         }
         if (currentWarnings.warningtype & LIGHT) {
             if(currentWarnings.LightWarning < 3){
-                mvprintw(numberOfWarningLines + 6, 25, "Light intensity is:                    ");
+                mvprintw(numberOfWarningLines + 6, 22, "Light intensity is:                     ");
                 higherOrLower(currentWarnings.LightWarning, numberOfWarningLines, strlen("Light intensity is: "));
                 numberOfWarningLines++;
             }
         }
         if (currentWarnings.warningtype & WATER) {
             if(currentWarnings.waterWarning < 3){
-                mvprintw(numberOfWarningLines + 6, 25, "Water level is:                        ");
+                mvprintw(numberOfWarningLines + 6, 22, "Water level is:                        ");
                 higherOrLower(currentWarnings.waterWarning, numberOfWarningLines, strlen("Water level is: "));
                 numberOfWarningLines++;
             }
         }
         if(currentWarnings.newroom != plants[plantIndex].roomNumber){
-            mvprintw(numberOfWarningLines + 6, 25,     "Move plant to room %d                  ", currentWarnings.newroom + 1);
+            mvprintw(numberOfWarningLines + 6, 22,     "Move plant to room %d                  ", currentWarnings.newroom + 1);
         } else { 
-            mvprintw(numberOfWarningLines + 6, 25,     "fix at source                          ");
+            mvprintw(numberOfWarningLines + 6, 22,     "fix at source                          ");
         }
         numberOfWarningLines += 2;
     }
 
     for (int room = 0; room < 3;room++)
     {   
-        //if(!rooms[room].solution && !rooms[room].conditionwarnings) continue;
-        mvprintw(numberOfWarningLinesRoom + 6, 65, "Warnings for room: %d", room + 1);
+        if(!rooms[room].solution && !rooms[room].conditionwarnings) continue;
+        mvprintw(numberOfWarningLinesRoom + 6, 65, "Room warnings for %d:", room + 1);
         numberOfWarningLinesRoom++;
         if (rooms[room].conditionFlag & SAMETYPE)
         {
@@ -447,7 +357,7 @@ void returnWarnings (plantSettings_t *plants, roomSettings_t *rooms){
                 mvprintw(numberOfWarningLinesRoom + 6, 65, "Humidity in the room is to low     ");
                 numberOfWarningLinesRoom++;
             }
-            if (rooms[room].solution & TODARK) {  
+            if (rooms[room].solution & TODARK) { 
                 mvprintw(numberOfWarningLinesRoom + 6, 65, "Room has too little light          ");
                 numberOfWarningLinesRoom++;
             }
@@ -460,23 +370,23 @@ void returnWarnings (plantSettings_t *plants, roomSettings_t *rooms){
         {
             // Check if each warning is active and print the corresponding message
             if (rooms[room].conditionwarnings & DRYING) {
-                mvprintw(numberOfWarningLinesRoom + 6, 63, "Plants in the room are drying out  ");
+                mvprintw(numberOfWarningLinesRoom + 6, 65, "Plants in the room are drying out  ");
                 numberOfWarningLinesRoom++;
             }
             if (rooms[room].conditionwarnings & OVERWATERING) {
-                mvprintw(numberOfWarningLinesRoom + 6, 63, "Plants in the room are drowning    ");
+                mvprintw(numberOfWarningLinesRoom + 6, 65, "Plants in the room are drowning    ");
                 numberOfWarningLinesRoom++;
             }
             if (rooms[room].conditionwarnings & FREEZING) {
-                mvprintw(numberOfWarningLinesRoom + 6, 63, "Plants in the room are freezing    ");
+                mvprintw(numberOfWarningLinesRoom + 6, 65, "Plants in the room are freezing    ");
                 numberOfWarningLinesRoom++;
             }
             if (rooms[room].conditionwarnings & WARMING) {
-                mvprintw(numberOfWarningLinesRoom + 6, 63, "Plants in the room are too hot     ");
+                mvprintw(numberOfWarningLinesRoom + 6, 65, "Plants in the room are too hot     ");
                 numberOfWarningLinesRoom++;
             }
             if (rooms[room].conditionwarnings & ROOM_WINDOW) {
-                mvprintw(numberOfWarningLinesRoom + 6, 63, "Plants in the room are window      ");
+                mvprintw(numberOfWarningLinesRoom + 6, 65, "Close the windows in the room      ");
                 numberOfWarningLinesRoom++;
             }
         }
